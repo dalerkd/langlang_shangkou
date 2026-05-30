@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+# 测试和缓存
+.pytest_cache/
+.pytest_tmp/
+*.db-journal
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+# Git
+.git/
+.gitignore
+# Docker 自身
+Dockerfile
+docker-compose.yml
+.dockerignore
+# 临时文件
+*.tmp
+*.log
+_*.py

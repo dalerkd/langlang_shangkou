@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: langlang_shangkou
+    ports:
+      - "8010:8010"
+    volumes:
+      # 持久化 SQLite 数据库和上传文件
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    # 提升 Linux 兼容性：将 host.docker.internal 解析到宿主机网关
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

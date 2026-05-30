@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title if article else "文章" }} · 朗朗上口{% endblock %}
+{% block content %}
+{% if not article %}
+<section class="empty-state">文章不存在。</section>
+{% else %}
+<section class="article-head">
+  <div>
+    <p class="eyebrow">Article</p>
+    <h1>{{ article.title }}</h1>
+    <p class="meta">{{ article.status }} · <time class="local-time" datetime="{{ article.created_at }}">{{ article.created_at }}</time></p>
+  </div>
+  <form
+    class="analysis-form"
+    method="post"
+    action="/articles/{{ article.id }}/analysis-jobs"
+    data-analysis-form
+    data-article-url="/articles/{{ article.id }}"
+  >
+    <button class="primary" type="submit">
+      {{ "更新学习清单" if article.status == "analyzed" else "生成学习清单" }}
+    </button>
+    <div class="analysis-progress" data-analysis-progress hidden>
+      <div class="analysis-progress-line">
+        <span data-analysis-message>准备分析</span>
+        <strong data-analysis-percent>0%</strong>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <div class="progress-fill" data-analysis-bar style="width: 0%"></div>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="reader-grid">
+  <article class="prose">
+    <div class="prose-header" data-prose-header>
+      <h2>原文段落</h2>
+      <div class="familiarity-bar" title="熟悉度：考量重复出现次数后的非陌生占比">
+        <span class="fam-label">熟悉度</span>
+        <span class="fam-metric">
+          量:{{ word_stats.known }}/{{ word_stats.total }}
+          ({% if word_stats.total > 0 %}{{ (word_stats.known * 100 // word_stats.total) }}{% else %}0{% endif %}%)
+        </span>
+        <span class="fam-metric">
+          唯一:{{ word_stats.unique_known }}/{{ word_stats.unique_total }}
+          ({% if word_stats.unique_total > 0 %}{{ (word_stats.unique_known * 100 // word_stats.unique_total) }}{% else %}0{% endif %}%)
+        </span>
+      </div>
+      <div class="annotate-controls">
+        <label class="toggle-switch">
+          <input type="checkbox" id="annotate-toggle" data-annotate-toggle>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">标注</span>
+        </label>
+        <button type="button" class="icon-btn" data-annotate-config-btn title="标注设置">&#9881;</button>
+        <div class="annotate-config-panel" data-annotate-config-panel hidden>
+          <div class="config-row">
+            <span class="config-status unknown">陌生</span>
+            <label><input type="checkbox" data-config-underline="unknown" checked> 下划线</label>
+            <input type="color" data-config-color="unknown" value="#000000">
+          </div>
+          <div class="config-row">
+            <span class="config-status confusing">迷惑</span>
+            <label><input type="checkbox" data-config-underline="confusing"> 下划线</label>
+            <input type="color" data-config-color="confusing" value="#b85c38">
+          </div>
+          <div class="config-row">
+            <span class="config-status familiar">熟悉</span>
+            <label><input type="checkbox" data-config-underline="familiar"> 下划线</label>
+            <input type="color" data-config-color="familiar" value="#2f7d6d">
+          </div>
+        </div>
+      </div>
+    </div>
+    {% if paragraphs %}
+      {% for paragraph in paragraphs %}
+        <p id="p{{ paragraph.paragraph_number }}" data-paragraph-number="{{ paragraph.paragraph_number }}">
+          <span class="paragraph-index">{{ paragraph.paragraph_number }}</span>
+          <span class="paragraph-text">{{ paragraph.text }}</span>
+        </p>
+      {% endfor %}
+    {% else %}
+      <p class="empty">尚未分析。点击右上角按钮生成词表和段落引用。</p>
+    {% endif %}
+  </article>
+
+  <aside class="term-column">
+    <section>
+      <div class="section-title" data-section-title>
+        <h2>单词表</h2>
+        <div class="familiarity-mini" title="量={{ word_stats.known }}/{{ word_stats.total }}  唯一={{ word_stats.unique_known }}/{{ word_stats.unique_total }}">
+          <span class="fam-metric">
+            {{ word_stats.known }}/{{ word_stats.total }}
+            ({% if word_stats.total > 0 %}{{ (word_stats.known * 100 // word_stats.total) }}{% else %}0{% endif %}%)
+          </span>
+        </div>
+      </div>
+      {% for term in word_terms %}
+        {% with article_id=article.id %}
+          {% include "_term_card.html" %}
+        {% endwith %}
+      {% else %}
+        <p class="empty">分析后显示单词。</p>
+      {% endfor %}
+    </section>
+    <section>
+      <div class="section-title" data-section-title>
+        <h2>短句表</h2>
+        <div class="familiarity-mini" title="量={{ phrase_stats.known }}/{{ phrase_stats.total }}  唯一={{ phrase_stats.unique_known }}/{{ phrase_stats.unique_total }}">
+          <span class="fam-metric">
+            {{ phrase_stats.known }}/{{ phrase_stats.total }}
+            ({% if phrase_stats.total > 0 %}{{ (phrase_stats.known * 100 // phrase_stats.total) }}{% else %}0{% endif %}%)
+          </span>
+        </div>
+      </div>
+      {% for term in phrase_terms %}
+        {% with article_id=article.id %}
+          {% include "_term_card.html" %}
+        {% endwith %}
+      {% else %}
+        <p class="empty">分析后显示短句。</p>
+      {% endfor %}
+    </section>
+  </aside>
+
+  <aside class="references-panel" id="references">
+    <p class="empty">点击任意词，查看它在本文和历史文章里的引用段落。</p>
+  </aside>
+</section>
+<script type="application/json" data-word-status-map>{{ word_status_map_json | safe }}</script>
+{% endif %}
+{% endblock %}

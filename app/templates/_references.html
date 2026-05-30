@@ -1,0 +1,18 @@
+<div class="reference-head">
+  <div>
+    <p class="eyebrow">References</p>
+    <h2>{{ term.canonical_text if term else "引用" }}</h2>
+    <p class="reference-stats">
+      {{ total_refs }} 个引用 · {{ article_count }} 篇文章</p>
+  </div>
+</div>
+<div class="reference-list">
+{% for reference in references %}
+  <a class="reference-row" href="/articles/{{ reference.article_id }}#p{{ reference.paragraph_number }}">
+    <strong>{{ reference.title }} · 段落 {{ reference.paragraph_number }}</strong>
+    <span>{{ reference.text[:120] }}{% if reference.text|length > 120 %}…{% endif %}</span>
+  </a>
+{% else %}
+  <p class="empty">还没有引用段落。</p>
+{% endfor %}
+</div>

@@ -1,0 +1,22 @@
+<form
+  class="term-editor"
+  hx-patch="/terms/{{ term.id }}"
+  hx-target="#term-{{ term.id }} .term-editor"
+  hx-swap="outerHTML"
+>
+  <div class="term-line">
+    <strong>{{ term.canonical_text }}</strong>
+    {% if term.frequency is defined %}
+      <span class="frequency">{{ term.frequency }} 次</span>
+    {% endif %}
+  </div>
+  <textarea name="meaning" rows="2" placeholder="待生成">{% if term.meaning and term.meaning != "待生成" %}{{ term.meaning }}{% endif %}</textarea>
+  <div class="term-actions">
+    <select name="status" data-term-canonical="{{ term.canonical_text }}">
+      <option value="unknown" {% if term.status == "unknown" %}selected{% endif %}>陌生</option>
+      <option value="confusing" {% if term.status == "confusing" %}selected{% endif %}>迷惑</option>
+      <option value="familiar" {% if term.status == "familiar" %}selected{% endif %}>熟悉</option>
+    </select>
+    <button type="submit">保存</button>
+  </div>
+</form>

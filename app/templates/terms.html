@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}词库 · 朗朗上口{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Term Memory</p>
+    <h1>全局词库</h1>
+  </div>
+  <form class="filters" method="get" action="/terms">
+    <input name="q" value="{{ filters.q }}" placeholder="搜索词">
+    <select name="type">
+      <option value="">全部类型</option>
+      <option value="word" {% if filters.type == "word" %}selected{% endif %}>单词</option>
+      <option value="phrase" {% if filters.type == "phrase" %}selected{% endif %}>短句</option>
+    </select>
+    <select name="status">
+      <option value="">全部状态</option>
+      <option value="unknown" {% if filters.status == "unknown" %}selected{% endif %}>陌生</option>
+      <option value="confusing" {% if filters.status == "confusing" %}selected{% endif %}>迷惑</option>
+      <option value="familiar" {% if filters.status == "familiar" %}selected{% endif %}>熟悉</option>
+    </select>
+    <button type="submit">筛选</button>
+  </form>
+</section>
+<section class="term-library">
+  {% for term in terms %}
+    <article class="library-row" id="term-{{ term.id }}">
+      {% include "_term_editor.html" %}
+      <div class="library-meta">
+        <span>{{ "短句" if term.type == "phrase" else "单词" }}</span>
+        <span>{{ term.total_frequency }} 次</span>
+        <span>{{ term.article_count }} 篇文章</span>
+      </div>
+    </article>
+  {% else %}
+    <p class="empty">暂无词。先分析一篇文章。</p>
+  {% endfor %}
+</section>
+{% endblock %}

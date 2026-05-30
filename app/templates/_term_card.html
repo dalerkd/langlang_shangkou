@@ -1,0 +1,23 @@
+<article class="term-card" id="term-{{ term.id }}" data-term-canonical="{{ term.canonical_text }}">
+  {% include "_term_editor.html" %}
+  <div class="term-actions">
+    <button
+      class="link-button locate-btn"
+      type="button"
+      data-term-id="{{ term.id }}"
+      data-article-id="{{ article_id }}"
+      data-term-canonical="{{ term.canonical_text }}"
+    >
+      定位
+    </button>
+    <button
+      class="link-button"
+      hx-get="/terms/{{ term.id }}/references"
+      hx-target="#references"
+      hx-push-url="false"
+      type="button"
+    >
+      查看引用
+    </button>
+  </div>
+</article>
