@@ -45,6 +45,44 @@
     });
   }
 
+  function updateFamiliarityStats(type) {
+    const sections = document.querySelectorAll(`section[data-term-type="${type}"]`);
+    let total = 0;
+    let known = 0;
+    let uniqueTotal = 0;
+    let uniqueKnown = 0;
+
+    sections.forEach((section) => {
+      section.querySelectorAll(".term-card").forEach((card) => {
+        const form = card.querySelector(".term-editor");
+        const frequency = parseInt(form?.dataset.frequency || "1", 10) || 1;
+        const select = card.querySelector('select[data-term-canonical]');
+        const status = select?.value || "unknown";
+
+        total += frequency;
+        uniqueTotal += 1;
+        if (status === "familiar") {
+          known += frequency;
+          uniqueKnown += 1;
+        }
+      });
+    });
+
+    const percent = total > 0 ? Math.round((known / total) * 100) : 0;
+    const uniquePercent = uniqueTotal > 0 ? Math.round((uniqueKnown / uniqueTotal) * 100) : 0;
+
+    document.querySelectorAll(`[data-stats-type="${type}"]`).forEach((bar) => {
+      const metrics = bar.querySelectorAll(".fam-metric");
+      if (bar.classList.contains("familiarity-bar")) {
+        if (metrics[0]) metrics[0].textContent = `总量:${known}/${total} (${percent}%)`;
+        if (metrics[1]) metrics[1].textContent = `唯一:${uniqueKnown}/${uniqueTotal} (${uniquePercent}%)`;
+      } else if (bar.classList.contains("familiarity-mini")) {
+        if (metrics[0]) metrics[0].textContent = `${known}/${total} (${percent}%)`;
+      }
+      bar.title = `总量=${known}/${total}（考量重复）  唯一=${uniqueKnown}/${uniqueTotal}（去重后）`;
+    });
+  }
+
   function updateProgress(form, payload) {
     const panel = form.querySelector("[data-analysis-progress]");
     const message = form.querySelector("[data-analysis-message]");
@@ -581,15 +619,26 @@
       showReferences();
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    if (target && target.closest && target.closest(".term-card")) {
-      const select = target.querySelector('select[data-term-canonical]');
-      if (select) {
-        const canonical = select.dataset.termCanonical;
-        const status = select.value;
-        const statusMap = getWordStatusMap();
-        statusMap[canonical] = status;
+    // 处理词卡更新：outerHTML 替换后 target 已被移出 DOM，需通过 elt 找到 card 再重新查询
+    const elt = event.detail.elt;
+    const card = (elt && elt.closest && elt.closest(".term-card"))
+              || (target && target.closest && target.closest(".term-card"));
+    if (card && card.id) {
+      const freshCard = document.getElementById(card.id);
+      if (freshCard) {
+        const select = freshCard.querySelector('select[data-term-canonical]');
+        if (select) {
+          const canonical = select.dataset.termCanonical;
+          const status = select.value;
+          const statusMap = getWordStatusMap();
+          statusMap[canonical] = status;
+        }
       }
       renderAnnotations();
+      const section = card.closest('section[data-term-type]');
+      if (section) {
+        updateFamiliarityStats(section.dataset.termType);
+      }
     }
     initLocalTimes(target || document);
   });

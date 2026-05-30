@@ -3,6 +3,7 @@
   hx-patch="/terms/{{ term.id }}"
   hx-target="#term-{{ term.id }} .term-editor"
   hx-swap="outerHTML"
+  data-frequency="{{ term.frequency }}"
 >
   <div class="term-line">
     <strong>{{ term.canonical_text }}</strong>

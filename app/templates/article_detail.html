@@ -36,13 +36,13 @@
   <article class="prose">
     <div class="prose-header" data-prose-header>
       <h2>原文段落</h2>
-      <div class="familiarity-bar" title="熟悉度：考量重复出现次数后的非陌生占比">
+      <div class="familiarity-bar" data-stats-type="word">
         <span class="fam-label">熟悉度</span>
-        <span class="fam-metric">
-          量:{{ word_stats.known }}/{{ word_stats.total }}
+        <span class="fam-metric" title="总量：考量重复出现次数后的非陌生占比">
+          总量:{{ word_stats.known }}/{{ word_stats.total }}
           ({% if word_stats.total > 0 %}{{ (word_stats.known * 100 // word_stats.total) }}{% else %}0{% endif %}%)
         </span>
-        <span class="fam-metric">
+        <span class="fam-metric" title="唯一：去重后的非陌生占比（不考量重复次数）">
           唯一:{{ word_stats.unique_known }}/{{ word_stats.unique_total }}
           ({% if word_stats.unique_total > 0 %}{{ (word_stats.unique_known * 100 // word_stats.unique_total) }}{% else %}0{% endif %}%)
         </span>
@@ -86,10 +86,10 @@
   </article>
 
   <aside class="term-column">
-    <section>
+    <section data-term-type="word">
       <div class="section-title" data-section-title>
         <h2>单词表</h2>
-        <div class="familiarity-mini" title="量={{ word_stats.known }}/{{ word_stats.total }}  唯一={{ word_stats.unique_known }}/{{ word_stats.unique_total }}">
+        <div class="familiarity-mini" data-stats-type="word" title="总量={{ word_stats.known }}/{{ word_stats.total }}（考量重复）  唯一={{ word_stats.unique_known }}/{{ word_stats.unique_total }}（去重后）">
           <span class="fam-metric">
             {{ word_stats.known }}/{{ word_stats.total }}
             ({% if word_stats.total > 0 %}{{ (word_stats.known * 100 // word_stats.total) }}{% else %}0{% endif %}%)
@@ -104,10 +104,10 @@
         <p class="empty">分析后显示单词。</p>
       {% endfor %}
     </section>
-    <section>
+    <section data-term-type="phrase">
       <div class="section-title" data-section-title>
         <h2>短句表</h2>
-        <div class="familiarity-mini" title="量={{ phrase_stats.known }}/{{ phrase_stats.total }}  唯一={{ phrase_stats.unique_known }}/{{ phrase_stats.unique_total }}">
+        <div class="familiarity-mini" data-stats-type="phrase" title="总量={{ phrase_stats.known }}/{{ phrase_stats.total }}（考量重复）  唯一={{ phrase_stats.unique_known }}/{{ phrase_stats.unique_total }}（去重后）">
           <span class="fam-metric">
             {{ phrase_stats.known }}/{{ phrase_stats.total }}
             ({% if phrase_stats.total > 0 %}{{ (phrase_stats.known * 100 // phrase_stats.total) }}{% else %}0{% endif %}%)
@@ -131,3 +131,4 @@
 <script type="application/json" data-word-status-map>{{ word_status_map_json | safe }}</script>
 {% endif %}
 {% endblock %}
+        <div class="familiarity-mini" title="总量={{ phrase_stats.known }}/{{ phrase_stats.total }}（考量重复）  唯一={{ phrase_stats.unique_known }}/{{ phrase_stats.unique_total }}（去重后）">
