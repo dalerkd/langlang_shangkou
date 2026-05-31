@@ -6,7 +6,7 @@
     <title>{% block title %}朗朗上口先读英语{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <script defer src="{{ url_for('static', path='/app.js') }}?v=14"></script>
+    <script defer src="{{ url_for('static', path='/app.js') }}?v=16"></script>
   </head>
   <body>
     <header class="topbar">
@@ -15,7 +15,15 @@
         <a href="/">录入</a>
         <a href="/terms">词库</a>
         <a href="/articles">历史文章</a>
+        <button type="button" class="nav-btn" id="lookup-toggle" title="临时查词（结果不存入词库）">查词</button>
       </nav>
+      <div class="lookup-panel" id="lookup-panel" style="display:none;">
+        <div class="lookup-body">
+          <input type="text" id="lookup-input" placeholder="输入单词…" autocomplete="off">
+          <button type="button" id="lookup-btn">查询</button>
+        </div>
+        <div class="lookup-result" id="lookup-result"></div>
+      </div>
     </header>
     <main class="shell">
       {% block content %}{% endblock %}

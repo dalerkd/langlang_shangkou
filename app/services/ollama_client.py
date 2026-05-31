@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import logging
 from typing import Iterable
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from app.config import (
     EXPLAINER_PROVIDER,
@@ -38,15 +41,20 @@ class OllamaExplainer:
         self.model = model
         self.timeout = timeout
         self.batch_size = batch_size
+        logger.debug(f"OllamaExplainer init: base_url={self.base_url}, model={self.model}")
 
     def explain_terms(self, terms: Iterable[dict[str, str]]) -> dict[str, ExplanationResult]:
         results: dict[str, ExplanationResult] = {}
         term_list = list(terms)
+        logger.info(f"Ollama: explaining {len(term_list)} terms in batches of {self.batch_size}")
         for batch in _chunks(term_list, self.batch_size):
             prompt = _build_batch_prompt(batch)
+            logger.debug(f"Ollama batch: {len(batch)} terms -> {[t['canonical_text'] for t in batch]}")
             try:
+                url = f"{self.base_url}/api/generate"
+                logger.debug(f"Ollama request POST {url}")
                 response = httpx.post(
-                    f"{self.base_url}/api/generate",
+                    url,
                     json={
                         "model": self.model,
                         "prompt": prompt,
@@ -58,15 +66,19 @@ class OllamaExplainer:
                 )
                 response.raise_for_status()
                 payload = response.json()
+                logger.debug(f"Ollama response status={response.status_code}")
                 meanings = _parse_json_response(str(payload.get("response", "")))
                 for term in batch:
                     canonical = term["canonical_text"]
                     meaning = str(meanings.get(canonical, "")).strip()
+                    if not meaning:
+                        logger.warning(f"Ollama missing explanation for '{canonical}'")
                     results[canonical] = ExplanationResult(
                         meaning=meaning or None,
                         error=None if meaning else "missing explanation",
                     )
             except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc:
+                logger.error(f"Ollama request failed: {exc}")
                 for term in batch:
                     results[term["canonical_text"]] = ExplanationResult(
                         meaning=None,
@@ -95,18 +107,23 @@ class OpenAIExplainer:
         self.model = model
         self.timeout = timeout
         self.batch_size = batch_size
+        logger.debug(f"OpenAIExplainer init: base_url={self.base_url}, model={self.model}")
 
     def explain_terms(self, terms: Iterable[dict[str, str]]) -> dict[str, ExplanationResult]:
         results: dict[str, ExplanationResult] = {}
         term_list = list(terms)
+        logger.info(f"OpenAI: explaining {len(term_list)} terms in batches of {self.batch_size}")
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
         for batch in _chunks(term_list, self.batch_size):
             prompt = _build_batch_prompt(batch)
+            logger.debug(f"OpenAI batch: {len(batch)} terms -> {[t['canonical_text'] for t in batch]}")
             try:
+                url = f"{self.base_url}/v1/chat/completions"
+                logger.debug(f"OpenAI request POST {url}")
                 response = httpx.post(
-                    f"{self.base_url}/v1/chat/completions",
+                    url,
                     json={
                         "model": self.model,
                         "messages": [{"role": "user", "content": prompt}],
@@ -117,16 +134,20 @@ class OpenAIExplainer:
                 )
                 response.raise_for_status()
                 data = response.json()
+                logger.debug(f"OpenAI response status={response.status_code}")
                 content = str(data.get("choices", [{}])[0].get("message", {}).get("content", ""))
                 meanings = _parse_json_response(content)
                 for term in batch:
                     canonical = term["canonical_text"]
                     meaning = str(meanings.get(canonical, "")).strip()
+                    if not meaning:
+                        logger.warning(f"OpenAI missing explanation for '{canonical}'")
                     results[canonical] = ExplanationResult(
                         meaning=meaning or None,
                         error=None if meaning else "missing explanation",
                     )
             except (httpx.HTTPError, json.JSONDecodeError, ValueError, IndexError, KeyError) as exc:
+                logger.error(f"OpenAI request failed: {exc}")
                 for term in batch:
                     results[term["canonical_text"]] = ExplanationResult(
                         meaning=None,
@@ -137,6 +158,7 @@ class OpenAIExplainer:
 
 def get_explainer() -> OllamaExplainer | OpenAIExplainer:
     """根据配置返回对应的释义客户端。"""
+    logger.info(f"Explainer provider: {EXPLAINER_PROVIDER}")
     if EXPLAINER_PROVIDER == "openai":
         return OpenAIExplainer()
     return OllamaExplainer()

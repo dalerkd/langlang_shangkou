@@ -72,6 +72,16 @@ docker-compose down
 ```
 
 数据持久化：`./data` 目录挂载到容器内。
+```bash
+# 便捷脚本（Windows）
+.\build.bat build   # 构建镜像
+.\build.bat up      # 启动服务
+.\build.bat logs    # 查看实时日志
+.\build.bat restart # 重启服务
+.\build.bat down    # 停止服务
+```
+
+`.env` 文件通过 volume 动态挂载进容器，修改后执行 `.\build.bat restart` 即可生效，无需重建镜像。
 
 ---
 
@@ -131,6 +141,11 @@ ollama serve
 OLLAMA_HOST=0.0.0.0:11434 ollama serve
 ```
 
+**注意**：如果 `host.docker.internal` 解析错误（如指向过期 IP），请检查：
+- Windows `hosts` 文件（`C:\Windows\System32\drivers\etc\hosts`）是否有硬编码的旧 IP
+- 本地代理/VPN 软件是否干扰了 DNS 解析
+- 上述情况与程序本身和 Docker 无关，清理 hosts 文件或关闭代理即可恢复
+
 如果 Ollama 不可用，文章分析仍会完成，释义显示为"待生成"。
 
 ---
@@ -161,6 +176,9 @@ OLLAMA_HOST=0.0.0.0:11434 ollama serve
 ├── data/
 │   └── learn.db             # SQLite 数据库（自动创建）
 ├── start.bat / start.sh     # 一键启动脚本
+├── build.bat                # Docker 管理脚本（build/up/down/logs/restart）
+├── .env                     # 环境变量配置（AI 来源、模型、日志级别）
+├── .env.copy                # 环境变量配置模板
 ├── Dockerfile               # Docker 构建
 ├── docker-compose.yml       # Docker 编排
 └── requirements.txt
@@ -185,6 +203,8 @@ pytest -q
 1. **缓存版本号**：`app.js` 和 `styles.css` 通过 `?v=N` 控制缓存，每次修改后需在 `base.html` 中递增版本号。
 2. **文件编码**：项目文件统一使用 UTF-8，Windows PowerShell 输出可能出现乱码，写入文件时务必指定 `encoding='utf-8'`。
 3. **时区显示**：数据库统一存储 UTC 时间，前端根据浏览器时区自动转换为本地时间。
+4. **`.env` 动态映射**：Docker 环境下 `.env` 通过 volume 挂载，修改后 `.\build.bat restart` 即可生效。
+5. **日志级别**：通过 `.env` 的 `LOG_LEVEL`（DEBUG/INFO/WARNING/ERROR）控制控制台输出详细程度。
 
 ---
 

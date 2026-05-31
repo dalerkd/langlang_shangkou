@@ -18,7 +18,7 @@
     data-article-url="/articles/{{ article.id }}"
   >
     <button class="primary" type="submit">
-      {{ "更新学习清单" if article.status == "analyzed" else "生成学习清单" }}
+      {{ "重新分析" if article.status == "analyzed" else "开始预习" }}
     </button>
     <div class="analysis-progress" data-analysis-progress hidden>
       <div class="analysis-progress-line">

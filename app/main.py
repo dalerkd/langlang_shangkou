@@ -17,6 +17,10 @@ from app.config import APP_ROOT, DEFAULT_DB_PATH
 from app.db import create_schema, get_connection
 from app.services.analysis_store import analyze_article
 from app.services.ollama_client import get_explainer
+import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(title="朗朗上口先读英语")
@@ -25,6 +29,46 @@ app.mount("/static", StaticFiles(directory=str(APP_ROOT / "app" / "static")), na
 app.state.explainer = get_explainer()
 app.state.analysis_jobs = {}
 app.state.analysis_jobs_lock = threading.Lock()
+
+@app.get("/debug/ollama")
+def debug_ollama():
+    explainer = get_explainer()
+    result = {
+        "provider": type(explainer).__name__,
+        "base_url": explainer.base_url,
+        "model": explainer.model,
+        "connectivity": None,
+        "error": None,
+    }
+    try:
+        if result["provider"] == "OllamaExplainer":
+            r = httpx.get(f"{explainer.base_url}/api/tags", timeout=10)
+            result["connectivity"] = r.status_code
+            result["models"] = [m["name"] for m in r.json().get("models", [])]
+        else:
+            r = httpx.get(f"{explainer.base_url}/models", headers={"Authorization": f"Bearer {getattr(explainer, 'api_key', '')}"}, timeout=10)
+            result["connectivity"] = r.status_code
+    except Exception as e:
+        import traceback
+        result["error"] = str(e)
+        result["error_type"] = type(e).__name__
+        result["traceback"] = traceback.format_exc().split("\n")[-4:]
+    return result
+
+@app.get("/debug/env")
+def debug_env():
+    from app.config import (
+        EXPLAINER_PROVIDER, OLLAMA_BASE_URL, OLLAMA_MODEL,
+        OPENAI_BASE_URL, OPENAI_MODEL, LOG_LEVEL,
+    )
+    return {
+        "EXPLAINER_PROVIDER": EXPLAINER_PROVIDER,
+        "OLLAMA_BASE_URL": OLLAMA_BASE_URL,
+        "OLLAMA_MODEL": OLLAMA_MODEL,
+        "OPENAI_BASE_URL": OPENAI_BASE_URL,
+        "OPENAI_MODEL": OPENAI_MODEL,
+        "LOG_LEVEL": LOG_LEVEL,
+    }
 
 
 def get_db(db_path: str | Path = str(DEFAULT_DB_PATH)) -> Iterator[sqlite3.Connection]:
@@ -201,6 +245,29 @@ def article_history(
         {"articles": articles},
     )
 
+
+
+@app.post("/lookup")
+def lookup_word(
+    request: Request,
+    word: str = Form(...),
+):
+    word = word.strip().lower()
+    if not word:
+        return {"meaning": "", "error": "请输入单词"}
+    try:
+        results = request.app.state.explainer.explain_terms([
+            {"canonical_text": word, "type": "word"}
+        ])
+        result = results.get(word)
+        if result is None:
+            return {"meaning": "", "error": "未获取到释义"}
+        if result.error:
+            return {"meaning": "", "error": result.error}
+        return {"meaning": result.meaning or "", "error": ""}
+    except Exception as exc:
+        logger.exception("Lookup failed for word: %s", word)
+        return {"meaning": "", "error": str(exc)}
 
 @app.get("/terms", response_class=HTMLResponse)
 def term_index(

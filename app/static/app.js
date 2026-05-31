@@ -693,6 +693,70 @@
     highlightWordInParagraphs(canonical);
   });
 
+
+  // 临时查词面板
+  const lookupToggle = document.getElementById("lookup-toggle");
+  const lookupPanel = document.getElementById("lookup-panel");
+  const lookupInput = document.getElementById("lookup-input");
+  const lookupBtn = document.getElementById("lookup-btn");
+  const lookupResult = document.getElementById("lookup-result");
+
+  if (lookupToggle && lookupPanel) {
+    lookupToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = lookupPanel.style.display === "none";
+      lookupPanel.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        lookupInput?.focus();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!lookupPanel.contains(e.target) && e.target !== lookupToggle) {
+        lookupPanel.style.display = "none";
+      }
+    });
+
+    lookupInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        doLookup();
+      }
+    });
+
+    lookupBtn?.addEventListener("click", doLookup);
+  }
+
+  async function doLookup() {
+    const word = lookupInput?.value.trim();
+    if (!word) return;
+    lookupResult.innerHTML = '<span class="lookup-loading">查询中…</span>';
+    try {
+      const formData = new URLSearchParams();
+      formData.append("word", word);
+      const response = await fetch("/lookup", {
+        method: "POST",
+        body: formData,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) throw new Error(`请求失败: ${response.status}`);
+      const data = await response.json();
+      if (data.error) {
+        lookupResult.innerHTML = `<span class="lookup-error">${escapeHtml(data.error)}</span>`;
+      } else {
+        lookupResult.textContent = data.meaning || "（无释义）";
+      }
+    } catch (err) {
+      lookupResult.innerHTML = `<span class="lookup-error">${escapeHtml(err.message)}</span>`;
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   // Initial render
   renderAnnotations();
   initLocalTimes();

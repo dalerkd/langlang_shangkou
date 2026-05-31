@@ -23,6 +23,8 @@ ENV/
 Dockerfile
 docker-compose.yml
 .dockerignore
+# 环境变量（防止敏感信息嵌入镜像）
+.env
 # 临时文件
 *.tmp
 *.log

@@ -227,6 +227,11 @@ button,
   gap: 10px;
   justify-items: end;
   min-width: min(320px, 100%);
+  align-self: flex-end;
+}
+
+.analysis-form .primary {
+  justify-self: end;
 }
 
 .analysis-form button[disabled] {
@@ -707,4 +712,72 @@ button,
 
 .familiarity-mini .fam-metric {
   font-size: 12px;
+}
+
+/* 临时查词面板 */
+.nav-btn {
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: var(--panel);
+  cursor: pointer;
+  font: inherit;
+}
+
+.lookup-panel {
+  position: absolute;
+  top: 64px;
+  right: clamp(18px, 4vw, 48px);
+  width: 320px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+}
+
+.lookup-body {
+  display: flex;
+  gap: 8px;
+}
+
+.lookup-body input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.lookup-body button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.lookup-body button:hover {
+  background: var(--accent-strong);
+}
+
+.lookup-result {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.lookup-error {
+  color: var(--warm);
+}
+
+.lookup-loading {
+  color: var(--muted);
 }

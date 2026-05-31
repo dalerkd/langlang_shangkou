@@ -1,3 +1,5 @@
+name: langlang_shangkou
+
 services:
   web:
     build: .
@@ -7,6 +9,8 @@ services:
     volumes:
       # 持久化 SQLite 数据库和上传文件
       - ./data:/app/data
+      # 动态映射 .env，修改后无需重建镜像，restart 即可生效
+      - ./.env:/app/.env:ro
     env_file:
       - .env
     environment:
@@ -14,4 +18,5 @@ services:
     restart: unless-stopped
     # 提升 Linux 兼容性：将 host.docker.internal 解析到宿主机网关
     extra_hosts:
+      # 提升 Linux 兼容性：将 host.docker.internal 解析到宿主机网关
       - "host.docker.internal:host-gateway"

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Callable
+import logging
 
 from app.services.analyzer import AnalysisResult, TermAnalysis, analyze_text
 from app.services.ollama_client import get_explainer
+
+logger = logging.getLogger(__name__)
 
 PENDING_MEANING = "待生成"
 
@@ -42,6 +45,7 @@ def analyze_article(
     )
     conn.commit()
     _progress(progress_callback, 100, "分析完成")
+    logger.info(f"Article {article_id} analysis completed ({len(all_terms)} terms)")
 
 
 def _store_paragraphs(
@@ -149,11 +153,19 @@ def _fill_meanings(
         _progress(progress_callback, 90, "解释已存在")
         return
 
+    logger.info(f"Requesting explanations for {len(rows)} terms")
     explanations = explainer.explain_terms(rows)
     _progress(progress_callback, 85, "保存中文解释")
+    success = 0
+    failed = 0
     for row in rows:
         result = explanations.get(row["canonical_text"])
         meaning = result.meaning if result and result.meaning else PENDING_MEANING
+        if meaning == PENDING_MEANING:
+            failed += 1
+            logger.warning(f"Pending meaning for '{row['canonical_text']}': {result.error if result else 'no result'}")
+        else:
+            success += 1
         conn.execute(
             """
             UPDATE terms
@@ -162,6 +174,7 @@ def _fill_meanings(
             """,
             (meaning, row["type"], row["canonical_text"]),
         )
+    logger.info(f"Explanations saved: {success} success, {failed} pending")
 
 
 def _progress(

@@ -24,26 +24,28 @@
 | 后端 | Python 3.12 + FastAPI | REST API + Server-Side Rendering (Jinja2) |
 | 数据库 | SQLite (`data/learn.db`) | 单文件数据库，自动创建 Schema |
 | 前端 | 原生 JS + HTMX + CSS | 无 React/Vue 等框架，减少依赖 |
-| AI 释义 | Ollama (`gemma4:e4b`) | 本地 LLM，批量生成中文解释 |
-| 部署 | Docker / 本地脚本 | `start.bat` / `start.sh` / `docker-compose` |
+| AI 释义 | Ollama（默认）或 OpenAI 兼容接口 | 通过 `EXPLAINER_PROVIDER` 切换 |
+| 部署 | Docker / 本地脚本 | `start.bat` / `start.sh` / `build.bat` / `docker-compose` |
 
 ### 关键文件映射
 
-- `app/main.py` — 所有路由端点（首页、文章 CRUD、分析任务、引用、词库）
+- `app/main.py` — 所有路由端点（首页、文章 CRUD、分析任务、引用、词库、诊断）
 - `app/db.py` — SQLite 连接 + 5 张表的 Schema
-- `app/config.py` — 全局配置，`OLLAMA_BASE_URL` 支持环境变量覆盖
+- `app/config.py` — 全局配置 + 日志配置，`.env` 通过 `python-dotenv` 加载
 - `app/services/analyzer.py` — 文本分析核心：分段、词频统计、词形还原、短语识别
 - `app/services/analysis_store.py` — 分析结果持久化，触发 Ollama 释义
-- `app/services/ollama_client.py` — Ollama HTTP 客户端，批量请求 JSON 格式释义
+- `app/services/ollama_client.py` — Ollama / OpenAI 兼容释义客户端
 - `app/static/app.js` — 前端所有交互逻辑
 - `app/static/styles.css` — 全部样式
+- `app/.env` — 所有动态配置的集中控制点（AI 来源、模型参数、日志级别）
+- `build.bat` — Docker 便捷管理脚本（build/up/down/logs/restart）
 
 ---
 
 ## 3. 关键代码约定
 
 ### 3.1 缓存版本号（强制）
-`app.js` 和 `styles.css` 在 `base.html` 中通过 `?v=N` 控制浏览器缓存。**每次修改这两个文件后，必须在 `base.html` 中递增 `N`**。当前版本：`?v=12`。
+`app.js` 和 `styles.css` 在 `base.html` 中通过 `?v=N` 控制浏览器缓存。**每次修改这两个文件后，必须在 `base.html` 中递增 `N`**。当前版本：`?v=14`。
 
 ### 3.2 文件编码（强制）
 项目文件存在 GBK/UTF-8 混用历史。**所有文件操作务必指定 `encoding='utf-8'`**。PowerShell 输出常显示乱码，但这不影响文件内容本身。
@@ -61,15 +63,30 @@
 - 前端通过 `<time class="local-time" datetime="...">` + JS `formatLocalTime()` 自动转换为浏览器本地时区
 - 后端 `_utc_now()` 使用 `datetime.now(timezone.utc).isoformat()`
 
+### 3.5 环境变量配置（通过 `.env` 文件）
+
+所有动态控制项统一放在项目根目录 `.env` 文件中，`app/config.py` 通过 `python-dotenv` 自动加载：
+
+- `EXPLAINER_PROVIDER` — 切换释义来源（`ollama` / `openai`）
+- `OLLAMA_*` — Ollama 的连接地址、模型、超时、批次大小
+- `OPENAI_*` — OpenAI 兼容接口的地址、Key、模型、超时、批次大小
+- `LOG_LEVEL` — 日志级别：`DEBUG` / `INFO` / `WARNING` / `ERROR`
+
+`.env.copy` 是配置模板，`.env` 被 `.gitignore` 忽略。Docker 环境下 `.env` 通过 volume 挂载，修改后 `build.bat restart` 即可生效。
+
 ---
 
 ## 4. 已知问题与限制
 
 ### 4.1 Docker 访问宿主机 Ollama
 - Docker 容器内 `localhost` / `127.0.0.1` 指向容器自身，不是宿主机
-- 已配置 `OLLAMA_BASE_URL=http://host.docker.internal:11434` + `extra_hosts`
-- **但 Ollama 默认只监听 `127.0.0.1`**，需手动设置 `OLLAMA_HOST=0.0.0.0:11434` 才能接受容器连接
+- 已配置 `OLLAMA_BASE_URL=http://host.docker.internal:11434`，`.env` 通过 volume 动态挂载
+- **Ollama 默认只监听 `127.0.0.1`**，需手动设置 `OLLAMA_HOST=0.0.0.0:11434` 才能接受容器连接
+- **注意**：`host.docker.internal` 解析错误通常由以下原因导致，**与程序/Docker 本身无关**：
+  - Windows `hosts` 文件（`C:\Windows\System32\drivers\etc\hosts`）中有硬编码的旧 IP
+  - 本地代理/VPN 软件干扰了 DNS 解析
 - 如果无法修改 Ollama 监听地址，可将 `OLLAMA_BASE_URL` 改为宿主机真实局域网 IP
+- Docker 使用 OpenAI 兼容接口时：无需此限制，直接访问外部 API 即可
 
 ### 4.2 SQLite 时区
 - `CURRENT_TIMESTAMP` 返回 UTC，但字符串格式不带 `Z` 后缀
@@ -104,17 +121,18 @@
 | 早期 | 三栏布局（原文 / 词表 / 引用） | 用户要求引用面板放右侧，点击其他区域隐藏 |
 | 中期 | 短语识别基于常见模式 + 上下文位置匹配 | 避免 "skill for a" 中的 `for` 被错误匹配为 `format for` |
 | 中期 | `user_edited` 字段标记人工修订的释义 | 防止"更新学习清单"覆盖用户手动修改的内容 |
-| 中期 | 熟悉度统计分"量"和"唯一单词"两个维度 | "量"考量重复出现后的非陌生占比，"唯一单词"仅计算去重后的比例 |
+| 中期 | 熟悉度统计分"总量"和"唯一"两个维度 | "总量"考量重复出现后的非陌生占比，"唯一"仅计算去重后的比例 |
 | 近期 | 前端时区转换（而非后端） | 自适应任何用户的浏览器时区，无需后端感知用户位置 |
 | 近期 | Docker 支持 + 启动脚本 | 用户需要跨平台一键启动和容器化部署 |
+| 近期 | 支持 OpenAI 兼容接口 | 用户需要非 Ollama 的释义来源，通过 `EXPLAINER_PROVIDER` 切换 |
+| 近期 | `.env` 集中配置 | 用户需要方便地切换 AI 来源和模型参数，Docker 自动映射 |
+| 近期 | `build.bat` + 诊断端点 + 可配置日志 | 用户需要便捷的 Docker 管理、故障排查能力和日志控制 |
 
 ---
 
 ## 7. 测试
 
-运行方式：
-
-```
+```powershell
 $env:PYTHONPATH="D:\Work\探索\朗朗上口先读英语"
 pytest -q
 ```
@@ -140,7 +158,7 @@ pytest -q
 - [ ] 导入/导出学习数据
 - [ ] 文章分类/标签
 - [ ] 学习进度统计（跨文章维度）
-- [ ] 支持非 Ollama 的释义来源（如 OpenAI API）
+- [ ] 支持更多释义来源（如 Claude、Azure OpenAI）
 
 ---
 
@@ -160,20 +178,3 @@ pytest -q
 ## 10. 联系方式
 
 本项目为个人学习工具，如有问题请通过原始对话线程沟通。
-| AI 释义 | Ollama（默认）或 OpenAI 兼容接口 | 通过 `EXPLAINER_PROVIDER` 切换 |
-- `app/services/ollama_client.py` — Ollama / OpenAI 兼容释义客户端
-- Docker 使用 Ollama 时：`localhost` / `127.0.0.1` 指向容器自身
-- Docker 使用 OpenAI 兼容接口时：无需此限制，直接访问外部 API 即可
-| 近期 | 支持 OpenAI 兼容接口 | 用户需要非 Ollama 的释义来源，通过 `EXPLAINER_PROVIDER` 切换 |
-- [x] 支持非 Ollama 的释义来源（如 OpenAI API）
-- `app/.env` — 所有动态配置的集中控制点（AI 来源、模型参数等）
-### 3.5 环境变量配置（通过 `.env` 文件）
-
-所有动态控制项统一放在项目根目录 `.env` 文件中，`app/config.py` 通过 `python-dotenv` 自动加载：
-
-- `EXPLAINER_PROVIDER` — 切换释义来源（`ollama` / `openai`）
-- `OLLAMA_*` — Ollama 的连接地址、模型、超时、批次大小
-- `OPENAI_*` — OpenAI 兼容接口的地址、Key、模型、超时、批次大小
-
-`.env.copy` 是配置模板，`.env` 被 `.gitignore` 忽略。修改 `.env` 后重启服务生效。
-| 近期 | `.env` 集中配置 | 用户需要方便地切换 AI 来源和模型参数，Docker 自动映射 |
