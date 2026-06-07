@@ -18,5 +18,6 @@ services:
     restart: unless-stopped
     # 提升 Linux 兼容性：将 host.docker.internal 解析到宿主机网关
     extra_hosts:
-      # 提升 Linux 兼容性：将 host.docker.internal 解析到宿主机网关
-      - "host.docker.internal:host-gateway"
+      # Windows Docker Desktop: 将 host.docker.internal 强制指向宿主机实际 IP
+      # 避免 Docker DNS 缓存过期 IP
+      - "host.docker.internal:192.168.1.110"

@@ -1,1 +1,1 @@
-docker-compose restart
+CALL .\build.bat rebuild

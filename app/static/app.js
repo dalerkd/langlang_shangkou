@@ -696,24 +696,52 @@
 
   // 临时查词面板
   const lookupToggle = document.getElementById("lookup-toggle");
-  const lookupPanel = document.getElementById("lookup-panel");
+  const lookupDrawer = document.getElementById("lookup-drawer");
+  const lookupBackdrop = document.getElementById("lookup-backdrop");
+  const lookupClose = document.getElementById("lookup-close");
   const lookupInput = document.getElementById("lookup-input");
   const lookupBtn = document.getElementById("lookup-btn");
   const lookupResult = document.getElementById("lookup-result");
 
-  if (lookupToggle && lookupPanel) {
+  function openLookupDrawer() {
+    if (!lookupDrawer || !lookupBackdrop) return;
+    lookupDrawer.style.display = "flex";
+    lookupBackdrop.style.display = "block";
+    requestAnimationFrame(() => {
+      lookupDrawer.classList.add("open");
+      lookupBackdrop.classList.add("open");
+    });
+    lookupInput?.focus();
+  }
+
+  function closeLookupDrawer() {
+    if (!lookupDrawer || !lookupBackdrop) return;
+    lookupDrawer.classList.remove("open");
+    lookupBackdrop.classList.remove("open");
+    setTimeout(() => {
+      if (!lookupDrawer.classList.contains("open")) {
+        lookupDrawer.style.display = "none";
+        lookupBackdrop.style.display = "none";
+      }
+    }, 300);
+  }
+
+  if (lookupToggle && lookupDrawer) {
     lookupToggle.addEventListener("click", (e) => {
       e.stopPropagation();
-      const isHidden = lookupPanel.style.display === "none";
-      lookupPanel.style.display = isHidden ? "block" : "none";
-      if (isHidden) {
-        lookupInput?.focus();
+      if (lookupDrawer.classList.contains("open")) {
+        closeLookupDrawer();
+      } else {
+        openLookupDrawer();
       }
     });
 
-    document.addEventListener("click", (e) => {
-      if (!lookupPanel.contains(e.target) && e.target !== lookupToggle) {
-        lookupPanel.style.display = "none";
+    lookupClose?.addEventListener("click", closeLookupDrawer);
+    lookupBackdrop?.addEventListener("click", closeLookupDrawer);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && lookupDrawer.classList.contains("open")) {
+        closeLookupDrawer();
       }
     });
 

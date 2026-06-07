@@ -36,9 +36,11 @@ echo [logs] Following logs...
 docker compose logs -f web
 exit /b 0
 
-:restart
-echo [restart] Restarting service...
-docker compose restart web
+:rebuild
+echo [rebuild] Rebuilding and restarting service...
+call :down
+call :build
+call :up
 exit /b 0
 
 :pull
@@ -55,7 +57,7 @@ echo   build    Build Docker image
 echo   up       Start services in background
 echo   down     Stop and remove containers
 echo   logs     Follow logs
-echo   restart  Restart service
+echo   rebuild  Stop, build, and start service
 echo   pull     Pull latest image and restart
 echo.
 echo Example: build.bat build ^& build.bat up

@@ -239,6 +239,60 @@ button,
   opacity: 0.78;
 }
 
+.analysis-form-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysis-form-mini .text-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--accent-strong);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.analysis-form-mini .text-btn:hover {
+  background: rgba(47, 125, 109, 0.08);
+}
+
+.analysis-form-mini button[disabled] {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.analysis-progress-mini {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.analysis-progress-mini:not([hidden]) {
+  display: flex;
+}
+
+.progress-track-mini {
+  width: 80px;
+  height: 4px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffefb;
+}
+
+.progress-track-mini .progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--warm));
+  transition: width 180ms ease;
+}
+
 .analysis-progress {
   width: min(320px, 100%);
   color: var(--muted);
@@ -726,34 +780,95 @@ button,
   font: inherit;
 }
 
-.lookup-panel {
-  position: absolute;
-  top: 64px;
-  right: clamp(18px, 4vw, 48px);
-  width: 320px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  z-index: 20;
+/* 右侧查词抽屉 */
+.lookup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 25;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
-.lookup-body {
+.lookup-backdrop.open {
+  opacity: 1;
+}
+
+.lookup-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 85vw);
+  height: 100vh;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.1);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.lookup-drawer.open {
+  transform: translateX(0);
+}
+
+.lookup-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lookup-drawer-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lookup-close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lookup-close:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.lookup-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.lookup-input-row {
   display: flex;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
-.lookup-body input {
+.lookup-input-row input {
   flex: 1;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--paper);
 }
 
-.lookup-body button {
-  padding: 8px 14px;
+.lookup-input-row button {
+  padding: 10px 16px;
   border: none;
   border-radius: 8px;
   background: var(--accent);
@@ -761,17 +876,16 @@ button,
   cursor: pointer;
 }
 
-.lookup-body button:hover {
+.lookup-input-row button:hover {
   background: var(--accent-strong);
 }
 
 .lookup-result {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.7;
   color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .lookup-error {

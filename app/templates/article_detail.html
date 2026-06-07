@@ -10,26 +10,6 @@
     <h1>{{ article.title }}</h1>
     <p class="meta">{{ article.status }} · <time class="local-time" datetime="{{ article.created_at }}">{{ article.created_at }}</time></p>
   </div>
-  <form
-    class="analysis-form"
-    method="post"
-    action="/articles/{{ article.id }}/analysis-jobs"
-    data-analysis-form
-    data-article-url="/articles/{{ article.id }}"
-  >
-    <button class="primary" type="submit">
-      {{ "重新分析" if article.status == "analyzed" else "开始预习" }}
-    </button>
-    <div class="analysis-progress" data-analysis-progress hidden>
-      <div class="analysis-progress-line">
-        <span data-analysis-message>准备分析</span>
-        <strong data-analysis-percent>0%</strong>
-      </div>
-      <div class="progress-track" aria-hidden="true">
-        <div class="progress-fill" data-analysis-bar style="width: 0%"></div>
-      </div>
-    </div>
-  </form>
 </section>
 
 <section class="reader-grid">
@@ -47,6 +27,24 @@
           ({% if word_stats.unique_total > 0 %}{{ (word_stats.unique_known * 100 // word_stats.unique_total) }}{% else %}0{% endif %}%)
         </span>
       </div>
+      <form
+        class="analysis-form-mini"
+        method="post"
+        action="/articles/{{ article.id }}/analysis-jobs"
+        data-analysis-form
+        data-article-url="/articles/{{ article.id }}"
+      >
+        <button class="text-btn" type="submit" title="重新生成学习清单">
+          {{ "重新分析" if article.status == "analyzed" else "开始预习" }}
+        </button>
+        <div class="analysis-progress-mini" data-analysis-progress hidden>
+          <span data-analysis-message>准备分析</span>
+          <div class="progress-track-mini" aria-hidden="true">
+            <div class="progress-fill" data-analysis-bar style="width: 0%"></div>
+          </div>
+          <strong data-analysis-percent>0%</strong>
+        </div>
+      </form>
       <div class="annotate-controls">
         <label class="toggle-switch">
           <input type="checkbox" id="annotate-toggle" data-annotate-toggle>

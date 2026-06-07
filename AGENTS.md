@@ -1,4 +1,4 @@
-# AGENTS.md — 朗朗上口先读英语
+﻿# AGENTS.md — 朗朗上口先读英语
 
 > 面向后续 AI Agent 的项目上下文交接文档。接手本项目前请先通读本文。
 
@@ -45,7 +45,9 @@
 ## 3. 关键代码约定
 
 ### 3.1 缓存版本号（强制）
-`app.js` 和 `styles.css` 在 `base.html` 中通过 `?v=N` 控制浏览器缓存。**每次修改这两个文件后，必须在 `base.html` 中递增 `N`**。当前版本：`?v=14`。
+`app.js` 和 `styles.css` 在 `base.html` 中通过 `?v=N` 控制浏览器缓存。**每次修改这两个文件后，必须在 `base.html` 中同步递增 `N`**。当前版本：`?v=18`。
+
+> 历史教训：`styles.css` 曾长期缺少 `?v=N` 后缀，导致浏览器缓存旧样式，修改后 UI 不生效。务必给两个文件同时加版本号。
 
 ### 3.2 文件编码（强制）
 项目文件存在 GBK/UTF-8 混用历史。**所有文件操作务必指定 `encoding='utf-8'`**。PowerShell 输出常显示乱码，但这不影响文件内容本身。
@@ -64,6 +66,16 @@
 - 后端 `_utc_now()` 使用 `datetime.now(timezone.utc).isoformat()`
 
 ### 3.5 环境变量配置（通过 `.env` 文件）
+### 3.6 Docker 构建缓存（强制注意）
+`build.bat rebuild` / `restart.bat` 底层调用 `docker compose build`，默认会复用 Docker 缓存层。如果修改了 `templates/`、`static/` 等文件，但浏览器仍加载旧版本（可通过查看源码确认），说明镜像未被真正重建。
+
+**解决方案**：强制无缓存重建
+```powershell
+docker compose build --no-cache
+docker compose up -d
+```
+
+> 验证技巧：当浏览器/截图工具不可用时，可通过 `socket` 直连 `127.0.0.1:8010` 发送 HTTP GET 请求，检查返回的 HTML 中是否包含新版本的关键标记（如新的 class 名、`?v=18` 等），比 `urllib` 或 `Invoke-WebRequest` 更可靠。
 
 所有动态控制项统一放在项目根目录 `.env` 文件中，`app/config.py` 通过 `python-dotenv` 自动加载：
 
@@ -86,13 +98,19 @@
   - Windows `hosts` 文件（`C:\Windows\System32\drivers\etc\hosts`）中有硬编码的旧 IP
   - 本地代理/VPN 软件干扰了 DNS 解析
 - 如果无法修改 Ollama 监听地址，可将 `OLLAMA_BASE_URL` 改为宿主机真实局域网 IP
-- Docker 使用 OpenAI 兼容接口时：无需此限制，直接访问外部 API 即可
+ - Docker 使用 OpenAI 兼容接口时：无需此限制，直接访问外部 API 即可
 
-### 4.2 SQLite 时区
+### 4.2 Docker 构建缓存陷阱
+`docker compose build` 会复用缓存层。如果 `COPY . .` 的缓存未被失效，修改后的 `templates/` 和 `static/` 文件不会进入新镜像。**当 `restart.bat` 后浏览器仍显示旧 UI 时，优先怀疑缓存问题**，使用 `docker compose build --no-cache` 强制重建。
+
+### 4.3 Node REPL + Playwright 在 Windows 上的限制
+Codex 的 `js` 工具中的 Node REPL 在 Windows 上运行 Playwright 时可能会崩溃（`kernel exited unexpectedly`）。如需截图验证本地页面，推荐使用 Python 的 `playwright.sync_api` 直接调用系统 Edge/Chrome 浏览器。
+
+### 4.4 SQLite 时区
 - `CURRENT_TIMESTAMP` 返回 UTC，但字符串格式不带 `Z` 后缀
 - 前端 JS 解析时手动补 `Z`：`utcString.replace(' ', 'T') + 'Z'`
 
-### 4.3 词形还原覆盖范围
+### 4.5 词形还原覆盖范围
 - irregular 映射表已补全常见动词的过去式/过去分词/现在分词，但不可能穷尽所有英语不规则变化
 - 未覆盖的单词会被规则还原（可能不准确）
 
@@ -110,6 +128,7 @@
 6. **双击交互** — 双击原文单词是核心交互，需精确匹配上下文位置（不是全文第一个匹配）
 7. **短语优先** — 双击时先判断是否为短语，短语优先跳转；5 秒内再次双击才跳转到单词本身
 8. **记忆用户选择** — 开关/配置需要持久化用户偏好（localStorage 或后端存储）
+9. **操作就近原则** — 与某区域相关的操作按钮应放在该区域标题栏内，而非远离的角落（如"重新分析"按钮从文章头部右上角移至"原文段落"标题栏旁）
 
 ---
 
@@ -127,6 +146,7 @@
 | 近期 | 支持 OpenAI 兼容接口 | 用户需要非 Ollama 的释义来源，通过 `EXPLAINER_PROVIDER` 切换 |
 | 近期 | `.env` 集中配置 | 用户需要方便地切换 AI 来源和模型参数，Docker 自动映射 |
 | 近期 | `build.bat` + 诊断端点 + 可配置日志 | 用户需要便捷的 Docker 管理、故障排查能力和日志控制 |
+| 近期 | "重新分析"按钮移至 prose-header、查词改为右侧抽屉 | 操作就近原则，不遮挡内容，支持大段文字滚动 |
 
 ---
 
@@ -171,7 +191,8 @@ pytest -q
 - [ ] `node -c app/static/app.js` 语法检查通过
 - [ ] 修改 `app.js`/`styles.css` 后递增 `base.html` 中的 `?v=N`
 - [ ] 所有文件写入指定 `encoding='utf-8'`
-- [ ] 修改词形还原后同步前后端并运行 `test_lemmatize_consistency.py`
+ - [ ] 修改词形还原后同步前后端并运行 `test_lemmatize_consistency.py`
+ - [ ] Docker 修改后若浏览器仍显示旧 UI，执行 `docker compose build --no-cache` 强制重建
 
 ---
 

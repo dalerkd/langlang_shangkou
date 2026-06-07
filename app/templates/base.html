@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}朗朗上口先读英语{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}?v=18">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <script defer src="{{ url_for('static', path='/app.js') }}?v=16"></script>
+    <script defer src="{{ url_for('static', path='/app.js') }}?v=18"></script>
   </head>
   <body>
     <header class="topbar">
@@ -17,16 +17,25 @@
         <a href="/articles">历史文章</a>
         <button type="button" class="nav-btn" id="lookup-toggle" title="临时查词（结果不存入词库）">查词</button>
       </nav>
-      <div class="lookup-panel" id="lookup-panel" style="display:none;">
-        <div class="lookup-body">
-          <input type="text" id="lookup-input" placeholder="输入单词…" autocomplete="off">
-          <button type="button" id="lookup-btn">查询</button>
-        </div>
-        <div class="lookup-result" id="lookup-result"></div>
-      </div>
     </header>
     <main class="shell">
       {% block content %}{% endblock %}
     </main>
+
+    <!-- 右侧查词抽屉 -->
+    <div class="lookup-backdrop" id="lookup-backdrop" style="display:none;" aria-hidden="true"></div>
+    <aside class="lookup-drawer" id="lookup-drawer" style="display:none;" aria-label="查词">
+      <div class="lookup-drawer-header">
+        <h3>临时查词</h3>
+        <button type="button" class="lookup-close" id="lookup-close" aria-label="关闭">×</button>
+      </div>
+      <div class="lookup-drawer-body">
+        <div class="lookup-input-row">
+          <input type="text" id="lookup-input" placeholder="输入单词或句子…" autocomplete="off">
+          <button type="button" id="lookup-btn">查询</button>
+        </div>
+        <div class="lookup-result" id="lookup-result"></div>
+      </div>
+    </aside>
   </body>
 </html>
