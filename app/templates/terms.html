@@ -4,7 +4,7 @@
 <section class="page-head">
   <div>
     <p class="eyebrow">Term Memory</p>
-    <h1>全局词库</h1>
+    <h1>全局词库 <span class="term-stats-badge" title="当前筛选结果 / 总词数">{{ filtered_count }}<span class="term-stats-sep">/</span>{{ total_count }}</span></h1>
   </div>
   <form class="filters" method="get" action="/terms">
     <input name="q" value="{{ filters.q }}" placeholder="搜索词">

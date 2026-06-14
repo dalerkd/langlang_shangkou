@@ -303,10 +303,13 @@ def term_index(
         """,
         params,
     ).fetchall()
+    # 统计总数（不带筛选条件）
+    total_row = conn.execute("SELECT COUNT(*) AS cnt FROM terms").fetchone()
+    total_count = total_row["cnt"] if total_row else 0
     return templates.TemplateResponse(
         request,
         "terms.html",
-        {"terms": terms, "filters": {"type": type, "status": status, "q": q}},
+        {"terms": terms, "filters": {"type": type, "status": status, "q": q}, "total_count": total_count, "filtered_count": len(terms)},
     )
 
 
