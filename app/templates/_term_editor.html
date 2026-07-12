@@ -10,6 +10,17 @@
     {% if term.frequency is defined %}
       <span class="frequency">{{ term.frequency }} 次</span>
     {% endif %}
+    {% set video_url = video_map.get(term.id) if video_map is defined else None %}
+    {% if video_url %}
+      <button
+        type="button"
+        class="video-trigger"
+        data-video-url="{{ video_url }}"
+        data-term-canonical="{{ term.canonical_text }}"
+        title="播放视频"
+        aria-label="播放 {{ term.canonical_text }} 的视频"
+      >▶️</button>
+    {% endif %}
   </div>
   {% set term_tags = tags_for_term.get(term.id, []) if tags_for_term is defined else [] %}
   {% include "_term_tags.html" %}

@@ -3,10 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>{% block title %}朗朗上口先读英语{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}?v=21">
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}?v=22">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <script defer src="{{ url_for('static', path='/app.js') }}?v=19"></script>
+    <script defer src="{{ url_for('static', path='/app.js') }}?v=24"></script>
   </head>
   <body>
     <header class="topbar">
@@ -38,5 +39,12 @@
         <div class="lookup-result" id="lookup-result"></div>
       </div>
     </aside>
+
+    <!-- 视频弹窗 -->
+    <div class="video-modal-backdrop" id="video-modal-backdrop" style="display:none;" aria-hidden="true"></div>
+    <div class="video-modal-panel" id="video-modal-panel" style="display:none;" role="dialog" aria-modal="true" aria-label="视频播放">
+      <button type="button" class="video-modal-close" id="video-modal-close" aria-label="关闭">×</button>
+      <video id="video-modal-player" controls playsinline preload="metadata"></video>
+    </div>
   </body>
 </html>

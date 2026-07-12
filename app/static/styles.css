@@ -1102,3 +1102,72 @@ button,
 .lookup-loading {
   color: var(--muted);
 }
+
+
+.video-trigger {
+  margin-left: auto;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.video-trigger:hover {
+  transform: scale(1.15);
+  background: var(--soft);
+}
+
+.video-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(37, 33, 29, 0.55);
+  display: none;
+}
+
+.video-modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 31;
+  width: min(90vw, 720px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  display: none;
+}
+
+.video-modal-panel video {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.video-modal-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.video-modal-close:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}

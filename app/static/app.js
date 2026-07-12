@@ -832,6 +832,67 @@
     return div.innerHTML;
   }
 
+  // ---------- 视频弹窗 ----------
+  const videoBackdrop = document.getElementById("video-modal-backdrop");
+  const videoPanel = document.getElementById("video-modal-panel");
+  const videoPlayer = document.getElementById("video-modal-player");
+  const videoClose = document.getElementById("video-modal-close");
+
+  function openVideoModal(url) {
+    if (!videoPlayer || !videoPanel || !videoBackdrop) return;
+    videoPlayer.src = url;
+    videoPlayer.load();
+    videoPanel.style.display = "block";
+    videoPlayer.play().catch(() => {});
+    videoBackdrop.style.display = "block";
+    videoBackdrop.removeAttribute("aria-hidden");
+    videoPanel.removeAttribute("aria-hidden");
+    videoPlayer.focus();
+  }
+
+  function closeVideoModal() {
+    if (!videoPlayer || !videoPanel || !videoBackdrop) return;
+    videoPlayer.pause();
+    videoPlayer.currentTime = 0;
+    videoPanel.style.display = "none";
+    videoBackdrop.style.display = "none";
+    videoBackdrop.setAttribute("aria-hidden", "true");
+    videoPanel.setAttribute("aria-hidden", "true");
+  }
+
+  if (videoBackdrop) {
+    videoBackdrop.addEventListener("click", closeVideoModal);
+  }
+  if (videoClose) {
+    videoClose.addEventListener("click", closeVideoModal);
+  }
+  if (videoPanel) {
+    videoPanel.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && videoPanel && videoPanel.style.display !== "none") {
+      closeVideoModal();
+    }
+  });
+  function onTriggerClick(trigger) {
+    const url = trigger.dataset.videoUrl;
+    if (url) openVideoModal(url);
+  }
+  document.addEventListener("click", (e) => {
+    const trigger = e.target.closest(".video-trigger");
+    if (trigger) onTriggerClick(trigger);
+  });
+  document.querySelectorAll(".video-trigger").forEach((trigger) => {
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onTriggerClick(trigger);
+    });
+  });
+  window.openVideoModal = openVideoModal;
+  window.closeVideoModal = closeVideoModal;
+
   // Initial render
   renderAnnotations();
   initLocalTimes();

@@ -243,6 +243,7 @@ def article_detail(
             "phrase_stats": phrase_stats,
             "tags_for_term": tags_for_term,
             "all_tags": all_tags,
+            "video_map": _build_video_map(word_terms + phrase_terms),
         },
     )
 
@@ -339,6 +340,7 @@ def term_index(
             "filtered_count": len(terms),
             "tags_for_term": tags_for_term,
             "all_tags": all_tags,
+            "video_map": _build_video_map(terms),
         },
     )
 
@@ -590,6 +592,21 @@ def _article_terms(
         """,
         (article_id, term_type),
     ).fetchall()
+
+def _video_url(canonical_text: str) -> str | None:
+    """Return static video URL if a matching video file exists, otherwise None."""
+    word = canonical_text.strip().lower()
+    if not word or not word.isalpha() or " " in word:
+        return None
+    first = word[0].upper()
+    filename = f"{first}-{word}.mp4"
+    path = APP_ROOT / "app" / "static" / "resource" / "words" / filename
+    if path.exists():
+        return f"/static/resource/words/{filename}"
+    return None
+
+def _build_video_map(terms: list[sqlite3.Row]) -> dict[int, str | None]:
+    return {term["id"]: _video_url(term["canonical_text"]) for term in terms}
 
 
 def _run_analysis_job(

@@ -34,9 +34,10 @@
 - `app/config.py` — 全局配置 + 日志配置，`.env` 通过 `python-dotenv` 加载
 - `app/services/analyzer.py` — 文本分析核心：分段、词频统计、词形还原、短语识别
 - `app/services/analysis_store.py` — 分析结果持久化，触发 Ollama 释义
-- `app/services/ollama_client.py` — Ollama / OpenAI 兼容释义客户端
-- `app/static/app.js` — 前端所有交互逻辑
-- `app/static/styles.css` — 全部样式
+  - `app/services/ollama_client.py` — Ollama / OpenAI 兼容释义客户端
+  - `app/static/resource/words/` — 单词视频资源（命名规则：`首字母大写-完整小写单词.mp4`，如 `S-stop.mp4`）
+  - `app/static/app.js` — 前端所有交互逻辑
+  - `app/static/styles.css` — 全部样式
 - `app/.env` — 所有动态配置的集中控制点（AI 来源、模型参数、日志级别）
 - `build.bat` — Docker 便捷管理脚本（build/up/down/logs/restart）
 
@@ -45,7 +46,7 @@
 ## 3. 关键代码约定
 
 ### 3.1 缓存版本号（强制）
-`app.js` 和 `styles.css` 在 `base.html` 中通过 `?v=N` 控制浏览器缓存。**每次修改这两个文件后，必须在 `base.html` 中同步递增 `N`**。当前版本：`app.js ?v=19`，`styles.css ?v=21`。
+`app.js` 和 `styles.css` 在 `base.html` 中通过 `?v=N` 控制浏览器缓存。**每次修改这两个文件后，必须在 `base.html` 中同步递增 `N`**。当前版本：`app.js ?v=24`，`styles.css` ?v=22`。
 
 > 历史教训：`styles.css` 曾长期缺少 `?v=N` 后缀，导致浏览器缓存旧样式，修改后 UI 不生效。务必给两个文件同时加版本号。
 
@@ -75,7 +76,7 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-> 验证技巧：当浏览器/截图工具不可用时，可通过 `socket` 直连 `127.0.0.1:8010` 发送 HTTP GET 请求，检查返回的 HTML 中是否包含新版本的关键标记（如新的 class 名、`?v=18` 等），比 `urllib` 或 `Invoke-WebRequest` 更可靠。
+> 验证技巧：当浏览器/截图工具不可用时，可通过 `socket` 直连 `127.0.0.1:8010` 发送 HTTP GET 请求，检查返回的 HTML 中是否包含新版本的关键标记（如新的 class 名、`?v=22` 等），比 `urllib` 或 `Invoke-WebRequest` 更可靠。
 
 所有动态控制项统一放在项目根目录 `.env` 文件中，`app/config.py` 通过 `python-dotenv` 自动加载：
 
@@ -149,7 +150,8 @@ Codex 的 `js` 工具中的 Node REPL 在 Windows 上运行 Playwright 时可能
 | 近期 | `build.bat` + 诊断端点 + 可配置日志 | 用户需要便捷的 Docker 管理、故障排查能力和日志控制 |
 | 近期 | "重新分析"按钮移至 prose-header、查词改为右侧抽屉 | 操作就近原则，不遮挡内容，支持大段文字滚动 |
 | 近期 | 全局词库添加统计徽章（筛选结果/总数） | 让用户直观了解当前筛选范围与词库规模 |
-| 近期 | 明确"歧义先确认，再实施"的协作原则 | 避免因 AI 擅自理解而误删/替换用户未要求改动的内容 |
+  | 近期 | 明确"歧义先确认，再实施"的协作原则 | 避免因 AI 擅自理解而误删/替换用户未要求改动的内容 |
+  | 近期 | 单词视频播放（article / terms 页） | 利用 `resource/words/首字母大写-单词.mp4` 资源，通过 ▶️ 图标弹窗播放 |
 
 ---
 
