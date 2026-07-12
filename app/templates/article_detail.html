@@ -44,14 +44,14 @@
           </div>
           <strong data-analysis-percent>0%</strong>
         </div>
-      </form>
+     </form>
       <div class="annotate-controls">
         <label class="toggle-switch">
           <input type="checkbox" id="annotate-toggle" data-annotate-toggle>
           <span class="toggle-slider"></span>
           <span class="toggle-label">标注</span>
         </label>
-        <button type="button" class="icon-btn" data-annotate-config-btn title="标注设置">&#9881;</button>
+      <button type="button" class="icon-btn" data-annotate-config-btn title="标注设置">&#9881;</button>
         <div class="annotate-config-panel" data-annotate-config-panel hidden>
           <div class="config-row">
             <span class="config-status unknown">陌生</span>
@@ -68,9 +68,22 @@
             <label><input type="checkbox" data-config-underline="familiar"> 下划线</label>
             <input type="color" data-config-color="familiar" value="#2f7d6d">
           </div>
+          <hr class="config-divider">
+          {% for tag in all_tags %}
+            <div class="config-row" data-tag-id="{{ tag.id }}">
+              <label class="config-tag-label">
+                <input type="checkbox" data-config-enable="{{ tag.id }}" checked>
+                <span class="tag-swatch" style="background-color: {{ tag.color }}"></span>
+                {{ tag.name }}
+              </label>
+              <input type="color" data-config-color="{{ tag.id }}" value="{{ tag.color }}">
+            </div>
+          {% else %}
+            <p class="config-empty">暂无标签。<a href="/tags">去标签库创建</a></p>
+          {% endfor %}
         </div>
       </div>
-    </div>
+   </div>
     {% if paragraphs %}
       {% for paragraph in paragraphs %}
         <p id="p{{ paragraph.paragraph_number }}" data-paragraph-number="{{ paragraph.paragraph_number }}">
@@ -127,6 +140,6 @@
   </aside>
 </section>
 <script type="application/json" data-word-status-map>{{ word_status_map_json | safe }}</script>
+<script type="application/json" data-tags>{{ tags_json | safe }}</script>
 {% endif %}
 {% endblock %}
-        <div class="familiarity-mini" title="总量={{ phrase_stats.known }}/{{ phrase_stats.total }}（考量重复）  唯一={{ phrase_stats.unique_known }}/{{ phrase_stats.unique_total }}（去重后）">

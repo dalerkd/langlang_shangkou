@@ -394,6 +394,151 @@ button,
   align-self: start;
 }
 
+.panel-card {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.inline-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.inline-form input {
+  flex: 1;
+}
+
+.tag-create {
+  margin-bottom: 24px;
+}
+
+.tag-create h2 {
+  margin-top: 0;
+}
+
+.tag-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.tag-card {
+  display: grid;
+  gap: 14px;
+}
+
+.tag-card-title,
+.tag-card-actions,
+.tag-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tag-card-title h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 20px;
+}
+
+.tag-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(37, 33, 29, 0.14);
+  border-radius: 50%;
+  vertical-align: -2px;
+  margin-right: 8px;
+}
+
+.tag-card-meta,
+.form-hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.tag-card-meta {
+  display: flex;
+  gap: 14px;
+}
+
+.text-btn {
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.danger-btn {
+  color: var(--warm);
+}
+
+.tag-editor {
+  max-width: 820px;
+}
+
+.tag-editor form {
+  display: grid;
+  gap: 10px;
+}
+
+.tag-editor textarea {
+  min-height: 360px;
+  font-family: Consolas, "Courier New", monospace;
+  line-height: 1.6;
+}
+
+.term-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.term-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid rgba(37, 33, 29, 0.12);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.tag-chip-remove {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.term-tag-add {
+  max-width: 140px;
+  padding: 4px 7px;
+  font-size: 12px;
+}
+
+.term-tags-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .section-title,
 .term-line,
 .term-actions,
@@ -738,6 +883,47 @@ button,
 /* 鏍囨敞鏍峰紡 */
 .anno {
   cursor: pointer;
+}
+ 
+ .config-tag-label {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   flex: 1;
+   cursor: pointer;
+   font-size: 14px;
+ }
+ 
+ .config-tag-label input[type="checkbox"] {
+   margin: 0;
+ }
+ 
+ .config-empty {
+   margin: 0;
+   padding: 8px 0;
+   font-size: 13px;
+   color: var(--muted);
+ }
+ 
+ .config-empty a {
+   color: var(--accent);
+   text-decoration: none;
+ }
+ 
+ .config-empty a:hover {
+   text-decoration: underline;
+ }
+ 
+.tag-annotation {
+  padding: 1px 2px;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.config-divider {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 8px 0;
 }
 
 /* 瀹氫綅楂樹寒 */

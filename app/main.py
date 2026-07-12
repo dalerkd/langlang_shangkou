@@ -17,6 +17,12 @@ from app.config import APP_ROOT, DEFAULT_DB_PATH
 from app.db import create_schema, get_connection
 from app.services.analysis_store import analyze_article
 from app.services.ollama_client import get_explainer
+from app.services.tags import (
+    create_tag,
+    get_all_tags,
+    get_term_tags,
+    update_tag_words,
+)
 import httpx
 import logging
 
@@ -211,6 +217,17 @@ def article_detail(
 
     word_stats = _stats(word_terms)
     phrase_stats = _stats(phrase_terms)
+    term_ids = [t["id"] for t in word_terms + phrase_terms]
+    tags_for_term = get_term_tags(conn, term_ids)
+    all_tags = get_all_tags(conn)
+
+    tags_with_words = {tag["id"]: dict(tag) for tag in all_tags}
+    for tag in tags_with_words.values():
+        tag["words"] = []
+    for row in conn.execute("SELECT tag_id, word FROM tag_words"):
+        if row["tag_id"] in tags_with_words:
+            tags_with_words[row["tag_id"]]["words"].append(row["word"])
+    tags_json = json.dumps(list(tags_with_words.values()), ensure_ascii=False)
 
     return templates.TemplateResponse(
         request,
@@ -221,8 +238,11 @@ def article_detail(
             "word_terms": word_terms,
             "phrase_terms": phrase_terms,
             "word_status_map_json": json.dumps(word_status_map, ensure_ascii=False),
+            "tags_json": tags_json,
             "word_stats": word_stats,
             "phrase_stats": phrase_stats,
+            "tags_for_term": tags_for_term,
+            "all_tags": all_tags,
         },
     )
 
@@ -306,10 +326,20 @@ def term_index(
     # 统计总数（不带筛选条件）
     total_row = conn.execute("SELECT COUNT(*) AS cnt FROM terms").fetchone()
     total_count = total_row["cnt"] if total_row else 0
+    term_ids = [t["id"] for t in terms]
+    tags_for_term = get_term_tags(conn, term_ids)
+    all_tags = get_all_tags(conn)
     return templates.TemplateResponse(
         request,
         "terms.html",
-        {"terms": terms, "filters": {"type": type, "status": status, "q": q}, "total_count": total_count, "filtered_count": len(terms)},
+        {
+            "terms": terms,
+            "filters": {"type": type, "status": status, "q": q},
+            "total_count": total_count,
+            "filtered_count": len(terms),
+            "tags_for_term": tags_for_term,
+            "all_tags": all_tags,
+        },
     )
 
 
@@ -335,10 +365,150 @@ def update_term(
     )
     conn.commit()
     term = conn.execute("SELECT * FROM terms WHERE id = ?", (term_id,)).fetchone()
+    tags_for_term = get_term_tags(conn, [term_id])
+    all_tags = get_all_tags(conn)
     return templates.TemplateResponse(
         request,
         "_term_editor.html",
-        {"term": term},
+        {"term": term, "tags_for_term": tags_for_term, "all_tags": all_tags},
+    )
+
+
+@app.get("/tags", response_class=HTMLResponse)
+def tag_index(
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+) -> HTMLResponse:
+    tags = conn.execute(
+        """
+        SELECT
+            t.id,
+            t.name,
+            t.color,
+            COUNT(DISTINCT tw.word) AS word_count,
+            COUNT(DISTINCT tt.term_id) AS term_count
+        FROM tags t
+        LEFT JOIN tag_words tw ON tw.tag_id = t.id
+        LEFT JOIN term_tags tt ON tt.tag_id = t.id
+        GROUP BY t.id
+        ORDER BY t.name
+        """
+    ).fetchall()
+    return templates.TemplateResponse(request, "tags.html", {"tags": tags})
+
+
+@app.post("/tags")
+def create_tag_route(
+    name: str = Form(...),
+    conn: sqlite3.Connection = Depends(get_db),
+) -> RedirectResponse:
+    tag_id = create_tag(conn, name)
+    conn.commit()
+    return RedirectResponse(f"/tags/{tag_id}", status_code=303)
+
+
+@app.get("/tags/{tag_id}", response_class=HTMLResponse)
+def tag_detail(
+    tag_id: int,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+) -> HTMLResponse:
+    tag = conn.execute(
+        """
+        SELECT
+            t.id,
+            t.name,
+            t.color,
+            COUNT(DISTINCT tw.word) AS word_count,
+            COUNT(DISTINCT tt.term_id) AS term_count
+        FROM tags t
+        LEFT JOIN tag_words tw ON tw.tag_id = t.id
+        LEFT JOIN term_tags tt ON tt.tag_id = t.id
+        WHERE t.id = ?
+        GROUP BY t.id
+        """,
+        (tag_id,),
+    ).fetchone()
+    if tag is None:
+        return templates.TemplateResponse(request, "tag_detail.html", {"tag": None})
+    words = conn.execute(
+        "SELECT word FROM tag_words WHERE tag_id = ? ORDER BY word",
+        (tag_id,),
+    ).fetchall()
+    return templates.TemplateResponse(
+        request,
+        "tag_detail.html",
+        {"tag": tag, "words_text": "\n".join(row["word"] for row in words)},
+    )
+
+
+@app.post("/tags/{tag_id}")
+def update_tag_route(
+    tag_id: int,
+    name: str = Form(...),
+    words: str = Form(...),
+    conn: sqlite3.Connection = Depends(get_db),
+) -> RedirectResponse:
+    conn.execute("UPDATE tags SET name = ? WHERE id = ?", (name.strip(), tag_id))
+    update_tag_words(conn, tag_id, words)
+    conn.commit()
+    return RedirectResponse(f"/tags/{tag_id}", status_code=303)
+
+
+@app.post("/tags/{tag_id}/delete")
+def delete_tag_route(
+    tag_id: int,
+    conn: sqlite3.Connection = Depends(get_db),
+) -> RedirectResponse:
+    conn.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
+    conn.commit()
+    return RedirectResponse("/tags", status_code=303)
+
+
+@app.post("/terms/{term_id}/tags")
+def add_term_tag(
+    term_id: int,
+    request: Request,
+    tag_id: int = Form(...),
+    conn: sqlite3.Connection = Depends(get_db),
+) -> HTMLResponse:
+    conn.execute(
+        "INSERT OR IGNORE INTO term_tags (term_id, tag_id) VALUES (?, ?)",
+        (term_id, tag_id),
+    )
+    conn.commit()
+    return _render_term_tags(request, conn, term_id)
+
+
+@app.delete("/terms/{term_id}/tags/{tag_id}")
+def remove_term_tag(
+    term_id: int,
+    tag_id: int,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+) -> HTMLResponse:
+    conn.execute(
+        "DELETE FROM term_tags WHERE term_id = ? AND tag_id = ?",
+        (term_id, tag_id),
+    )
+    conn.commit()
+    return _render_term_tags(request, conn, term_id)
+
+
+def _render_term_tags(
+    request: Request,
+    conn: sqlite3.Connection,
+    term_id: int,
+) -> HTMLResponse:
+    term = conn.execute("SELECT * FROM terms WHERE id = ?", (term_id,)).fetchone()
+    return templates.TemplateResponse(
+        request,
+        "_term_tags.html",
+        {
+            "term": term,
+            "term_tags": get_term_tags(conn, [term_id]).get(term_id, []),
+            "all_tags": get_all_tags(conn),
+        },
     )
 
 

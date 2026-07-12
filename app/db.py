@@ -69,6 +69,27 @@ def create_schema(conn: sqlite3.Connection) -> None:
             ON term_occurrences(term_id);
         CREATE INDEX IF NOT EXISTS idx_article_term_stats_article
             ON article_term_stats(article_id, sort_weight);
+
+        CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            color TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS tag_words (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+            word TEXT NOT NULL,
+            UNIQUE(tag_id, word)
+        );
+
+        CREATE TABLE IF NOT EXISTS term_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            term_id INTEGER NOT NULL REFERENCES terms(id) ON DELETE CASCADE,
+            tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+            UNIQUE(term_id, tag_id)
+        );
         """
     )
     conn.commit()

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ tag.name if tag else "标签不存在" }} · 标签库{% endblock %}
+{% block content %}
+{% if not tag %}
+  <section class="empty-state">标签不存在。</section>
+{% else %}
+  <section class="page-head">
+    <div>
+      <p class="eyebrow">Tag Dictionary</p>
+      <h1><span class="tag-swatch" style="background-color: {{ tag.color }}"></span>{{ tag.name }}</h1>
+      <p class="meta">词表 {{ tag.word_count }} 个 · 已匹配全局词库 {{ tag.term_count }} 个</p>
+    </div>
+    <a class="button-link" href="/tags">返回标签库</a>
+  </section>
+
+  <section class="tag-editor panel-card">
+    <form method="post" action="/tags/{{ tag.id }}">
+      <label for="tag-name">标签名称</label>
+      <input id="tag-name" name="name" value="{{ tag.name }}" required maxlength="40">
+      <label for="tag-words">词表</label>
+      <p class="form-hint">每行一个英文单词。保存时会替换整个词表，并自动同步匹配的单词。</p>
+      <textarea id="tag-words" name="words" rows="20" placeholder="abandon&#10;ability&#10;achieve">{{ words_text }}</textarea>
+      <div class="tag-editor-actions">
+        <button type="submit">保存词表</button>
+        <form method="post" action="/tags/{{ tag.id }}/delete" onsubmit="return confirm('确定删除这个标签吗？');">
+          <button class="text-btn danger-btn" type="submit">删除标签</button>
+        </form>
+      </div>
+    </form>
+  </section>
+{% endif %}
+{% endblock %}

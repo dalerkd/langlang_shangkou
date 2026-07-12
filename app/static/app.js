@@ -472,33 +472,56 @@
     }
   });
 
-  /* ---------- 鏍囨敞鍔熻兘 ---------- */
+  /* ---------- 标注功能 ---------- */
   const ANNOTATE_KEY = "annotate_enabled";
   const ANNOTATE_CONFIG_KEY = "annotate_config";
+  const ANNOTATE_TAG_CONFIG_KEY = "annotate_tag_config";
+
   const DEFAULT_CONFIG = {
     unknown:   { underline: true,  color: "#000000" },
     confusing: { underline: false, color: "#b85c38" },
     familiar:  { underline: false, color: "#2f7d6d" },
   };
 
+  function loadTags() {
+    const el = document.querySelector("[data-tags]");
+    if (!el) return [];
+    try {
+      return JSON.parse(el.textContent);
+    } catch { return []; }
+  }
+
+  function loadTagConfig() {
+    try {
+      return JSON.parse(localStorage.getItem(ANNOTATE_TAG_CONFIG_KEY)) || {};
+    } catch { return {}; }
+  }
+
+  function saveTagConfig(cfg) {
+    localStorage.setItem(ANNOTATE_TAG_CONFIG_KEY, JSON.stringify(cfg));
+  }
+
   function loadConfig() {
     try {
       return JSON.parse(localStorage.getItem(ANNOTATE_CONFIG_KEY)) || DEFAULT_CONFIG;
     } catch { return DEFAULT_CONFIG; }
   }
+
   function saveConfig(cfg) {
     localStorage.setItem(ANNOTATE_CONFIG_KEY, JSON.stringify(cfg));
   }
+
   function isEnabled() {
     return localStorage.getItem(ANNOTATE_KEY) === "1";
   }
+
   function setEnabled(v) {
     localStorage.setItem(ANNOTATE_KEY, v ? "1" : "0");
   }
 
   let _wordStatusMapCache = null;
 
- function getWordStatusMap() {
+  function getWordStatusMap() {
     if (_wordStatusMapCache) return _wordStatusMapCache;
     const el = document.querySelector("[data-word-status-map]");
     if (!el) return {};
@@ -512,7 +535,20 @@
     const enabled = isEnabled();
     const cfg = loadConfig();
     const statusMap = getWordStatusMap();
+    const tags = loadTags();
+    const tagConfig = loadTagConfig();
     const wordRe = /[A-Za-z]+(?:'[A-Za-z]+)?/g;
+
+    const wordToColor = new Map();
+    for (const tag of tags) {
+      const tCfg = tagConfig[tag.id] || { enabled: true, color: tag.color };
+      if (!tCfg.enabled) continue;
+      for (const word of tag.words) {
+        if (!wordToColor.has(word)) {
+          wordToColor.set(word, tCfg.color);
+        }
+      }
+    }
 
     document.querySelectorAll(".prose .paragraph-text").forEach((textEl) => {
       const rawText = textEl.dataset.originalText || textEl.textContent;
@@ -530,13 +566,21 @@
         parts.push(document.createTextNode(rawText.slice(lastIndex, m.index)));
         const canonical = lemmatizeWord(m[0]);
         const status = statusMap[canonical];
-        if (status && cfg[status] && cfg[status].underline) {
+        const statusCfg = cfg[status];
+        const color = wordToColor.get(canonical);
+
+        if ((statusCfg && statusCfg.underline) || color) {
           const span = document.createElement("span");
-          span.className = `anno anno-${status}`;
+          span.className = "tag-annotation";
           span.textContent = m[0];
-          span.style.textDecoration = "underline";
-          span.style.textDecorationColor = cfg[status].color;
-          span.style.textDecorationThickness = "2px";
+          if (color) {
+            span.style.backgroundColor = color;
+          }
+          if (statusCfg && statusCfg.underline) {
+            span.style.textDecoration = "underline";
+            span.style.textDecorationColor = statusCfg.color;
+            span.style.textDecorationThickness = "2px";
+          }
           parts.push(span);
         } else {
           parts.push(document.createTextNode(m[0]));
@@ -567,6 +611,7 @@
     configBtn.addEventListener("click", () => {
       configPanel.hidden = !configPanel.hidden;
     });
+
     // Load current config into inputs
     const cfg = loadConfig();
     ["unknown", "confusing", "familiar"].forEach((status) => {
@@ -575,6 +620,17 @@
       if (u) u.checked = cfg[status].underline;
       if (c) c.value = cfg[status].color;
     });
+
+    // Load tag config into inputs
+    const tags = loadTags();
+    const tagCfg = loadTagConfig();
+    for (const tag of tags) {
+      const enableInput = configPanel.querySelector(`[data-config-enable="${tag.id}"]`);
+      const colorInput = configPanel.querySelector(`[data-config-color="${tag.id}"]`);
+      if (enableInput) enableInput.checked = (tagCfg[tag.id]?.enabled !== false);
+      if (colorInput) colorInput.value = tagCfg[tag.id]?.color || tag.color;
+    }
+
     // Save on change
     configPanel.addEventListener("change", () => {
       const newCfg = {};
@@ -587,30 +643,21 @@
         };
       });
       saveConfig(newCfg);
+
+      const newTagCfg = {};
+      for (const tag of tags) {
+        const enableInput = configPanel.querySelector(`[data-config-enable="${tag.id}"]`);
+        const colorInput = configPanel.querySelector(`[data-config-color="${tag.id}"]`);
+        newTagCfg[tag.id] = {
+          enabled: enableInput ? enableInput.checked : true,
+          color: colorInput ? colorInput.value : tag.color,
+        };
+      }
+      saveTagConfig(newTagCfg);
+
       renderAnnotations();
     });
   }
-
-  // ---------- 寮曠敤闈㈡澘鏄剧ず/闅愯棌 ----------
-  function showReferences() {
-    const grid = document.querySelector(".reader-grid");
-    if (grid) grid.classList.add("has-references");
-  }
-  function hideReferences() {
-    const grid = document.querySelector(".reader-grid");
-    if (grid) grid.classList.remove("has-references");
-  }
-
-  // Click prose or term-column to hide references
-  document.querySelector(".prose")?.addEventListener("click", (e) => {
-    // Only hide if not clicking a highlighted word
-    hideReferences();
-  });
-  document.querySelector(".term-column")?.addEventListener("click", (e) => {
-    // Don't hide if clicking the "查看引用" button
-    if (e.target.closest('[hx-get*="/references"]')) return;
-    hideReferences();
-  });
 
   // HTMX: show references when loaded, update annotations on term change
   document.addEventListener("htmx:afterSwap", (event) => {

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}标签库 · 朗朗上口{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Custom Tags</p>
+    <h1>标签库</h1>
+    <p class="meta">为单词建立自己的词汇分类，例如“四级词汇”或“PETS3”。</p>
+  </div>
+</section>
+
+<section class="tag-create panel-card">
+  <h2>新建标签</h2>
+  <form method="post" action="/tags" class="inline-form">
+    <input name="name" required maxlength="40" placeholder="标签名称，例如：四级词汇">
+    <button type="submit">创建标签</button>
+  </form>
+</section>
+
+<section class="tag-library">
+  {% for tag in tags %}
+    <article class="tag-card panel-card">
+      <div class="tag-card-title">
+        <span class="tag-swatch" style="background-color: {{ tag.color }}"></span>
+        <h2>{{ tag.name }}</h2>
+      </div>
+      <div class="tag-card-meta">
+        <span>{{ tag.word_count }} 个词</span>
+        <span>{{ tag.term_count }} 个已匹配词</span>
+      </div>
+      <div class="tag-card-actions">
+        <a class="button-link" href="/tags/{{ tag.id }}">管理词表</a>
+        <form method="post" action="/tags/{{ tag.id }}/delete" onsubmit="return confirm('确定删除这个标签吗？词库单词不会被删除。');">
+          <button class="text-btn danger-btn" type="submit">删除</button>
+        </form>
+      </div>
+    </article>
+  {% else %}
+    <p class="empty">还没有自定义标签。先创建一个标签吧。</p>
+  {% endfor %}
+</section>
+{% endblock %}

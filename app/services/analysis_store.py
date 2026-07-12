@@ -5,6 +5,7 @@ from collections.abc import Callable
 import logging
 
 from app.services.analyzer import AnalysisResult, TermAnalysis, analyze_text
+from app.services.tags import apply_tags_for_term
 from app.services.ollama_client import get_explainer
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,8 @@ def analyze_article(
     paragraph_ids = _store_paragraphs(conn, article_id, result.paragraphs)
     all_terms = result.words + result.phrases
     term_ids = _ensure_terms(conn, all_terms)
+    for term in result.words:
+        apply_tags_for_term(conn, term_ids[(term.type, term.canonical)], term.canonical)
     _store_stats_and_occurrences(conn, article_id, all_terms, term_ids, paragraph_ids)
     _progress(progress_callback, 45, f"准备生成 {len(all_terms)} 个解释")
     _fill_meanings(conn, all_terms, term_ids, explainer or get_explainer(), progress_callback)

@@ -11,6 +11,8 @@
       <span class="frequency">{{ term.frequency }} 次</span>
     {% endif %}
   </div>
+  {% set term_tags = tags_for_term.get(term.id, []) if tags_for_term is defined else [] %}
+  {% include "_term_tags.html" %}
   <textarea name="meaning" rows="2" placeholder="待生成">{% if term.meaning and term.meaning != "待生成" %}{{ term.meaning }}{% endif %}</textarea>
   <div class="term-actions">
     <select name="status" data-term-canonical="{{ term.canonical_text }}">
