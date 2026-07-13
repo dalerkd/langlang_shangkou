@@ -35,7 +35,7 @@
 - `app/services/analyzer.py` — 文本分析核心：分段、词频统计、词形还原、短语识别
 - `app/services/analysis_store.py` — 分析结果持久化，触发 Ollama 释义
   - `app/services/ollama_client.py` — Ollama / OpenAI 兼容释义客户端
-  - `app/static/resource/words/` — 单词视频资源（命名规则：`首字母大写-完整小写单词.mp4`，如 `S-stop.mp4`）
+  - `app/static/resource/words/首字母/` — 单词视频资源（命名规则：`首字母大写/首字母大写-完整小写单词.mp4`，如 `S/S-stop.mp4`）
   - `app/static/app.js` — 前端所有交互逻辑
   - `app/static/styles.css` — 全部样式
 - `app/.env` — 所有动态配置的集中控制点（AI 来源、模型参数、日志级别）
@@ -104,14 +104,17 @@ docker compose up -d
 ### 4.2 Docker 构建缓存陷阱
 `docker compose build` 会复用缓存层。如果 `COPY . .` 的缓存未被失效，修改后的 `templates/` 和 `static/` 文件不会进入新镜像。**当 `restart.bat` 后浏览器仍显示旧 UI 时，优先怀疑缓存问题**，使用 `docker compose build --no-cache` 强制重建。
 
-### 4.3 Node REPL + Playwright 在 Windows 上的限制
+### 4.3 Docker 视频资源 volume 挂载
+`app/static/resource/words/` 目录体积较大，且视频文件不需要进入 Docker 镜像构建上下文。`docker-compose.yml` 已将其以只读 volume 形式挂载到容器：`./app/static/resource/words:/app/static/resource/words:ro`。新增/修改视频后无需重建镜像，只需确保文件按 `首字母/首字母-单词.mp4` 规则放入对应子目录即可。
+
+### 4.4 Node REPL + Playwright 在 Windows 上的限制
 Codex 的 `js` 工具中的 Node REPL 在 Windows 上运行 Playwright 时可能会崩溃（`kernel exited unexpectedly`）。如需截图验证本地页面，推荐使用 Python 的 `playwright.sync_api` 直接调用系统 Edge/Chrome 浏览器。
 
-### 4.4 SQLite 时区
+### 4.5 SQLite 时区
 - `CURRENT_TIMESTAMP` 返回 UTC，但字符串格式不带 `Z` 后缀
 - 前端 JS 解析时手动补 `Z`：`utcString.replace(' ', 'T') + 'Z'`
 
-### 4.5 词形还原覆盖范围
+### 4.6 词形还原覆盖范围
 - irregular 映射表已补全常见动词的过去式/过去分词/现在分词，但不可能穷尽所有英语不规则变化
 - 未覆盖的单词会被规则还原（可能不准确）
 

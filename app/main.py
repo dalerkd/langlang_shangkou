@@ -594,15 +594,15 @@ def _article_terms(
     ).fetchall()
 
 def _video_url(canonical_text: str) -> str | None:
-    """Return static video URL if a matching video file exists, otherwise None."""
+    """Return static video URL if a matching video file exists under words/<FirstLetter>/, otherwise None."""
     word = canonical_text.strip().lower()
     if not word or not word.isalpha() or " " in word:
         return None
     first = word[0].upper()
     filename = f"{first}-{word}.mp4"
-    path = APP_ROOT / "app" / "static" / "resource" / "words" / filename
+    path = APP_ROOT / "app" / "static" / "resource" / "words" / first / filename
     if path.exists():
-        return f"/static/resource/words/{filename}"
+        return f"/static/resource/words/{first}/{filename}"
     return None
 
 def _build_video_map(terms: list[sqlite3.Row]) -> dict[int, str | None]:

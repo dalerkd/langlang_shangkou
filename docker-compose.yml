@@ -11,6 +11,8 @@ services:
       - ./data:/app/data
       # 动态映射 .env，修改后无需重建镜像，restart 即可生效
       - ./.env:/app/.env:ro
+      # 大体积视频资源通过 volume 挂载，避免进入 Docker 构建上下文
+      - ./app/static/resource/words:/app/static/resource/words:ro
     env_file:
       - .env
     environment:

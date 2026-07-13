@@ -29,3 +29,5 @@ docker-compose.yml
 *.tmp
 *.log
 _*.py
+# 大体积视频资源通过 volume 挂载，不进入镜像构建上下文
+app/static/resource/words/
